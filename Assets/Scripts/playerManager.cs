@@ -6,11 +6,11 @@ using UnityEngine.UI;
 public class playerManager : MonoBehaviour
 {
     // Player specific variables
-    private int health;
-    private int score;
-    private List<Collectable> inventory = new List<Collectable>();
+    //private int health;
+    //private int score;
+    //private List<Collectable> inventory;
     public Text inventoryText;
-    public Text descriptionText; 
+    public Text descriptionText;
     private int currentIndex;
 
     // Boolean values
@@ -23,6 +23,8 @@ public class playerManager : MonoBehaviour
     public GameObject winMenu;
     public GameObject loseMenu;
 
+    public PlayerInfo info;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -34,34 +36,53 @@ public class playerManager : MonoBehaviour
         FindAllMenus();
 
         //Start player with initial health and score
-        health = 100;
-        score = 0;
+        //health = 100;
+        //score = 0;
+
+        info = GameObject.FindWithTag("Info").GetComponent<PlayerInfo>();
+
+        foreach (Colectable item in info.inventory)
+        {
+            item.player = this.gameObject;
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        healthText.text = "Health: " + health.ToString();
-        scoreText.text  = "Score:  " + score.ToString();
+        healthText.text = "Health: " + info.health.ToString();
+        scoreText.text  = "Score:  " + info.score.ToString();
 
-        if (inventory.Count == 0) 
+        if (info.inventory.Count == 0) //if inventory is empty
         {
-            inventoryText.text = "Current Selection; None";
+            inventoryText.text = "Current Selection: None";
             descriptionText.text = "";
         }
-        else
+        else //if inventory IS NOT empty
         {
-            inventoryText.text = "Current Selection: " + inventory[currentIndex].CollectableName + " " + currentIndex.ToString();
-            descriptionText.text = "Press [E] to " + inventory[currentIndex].description;
+            inventoryText.text = "Current Selection: " + info.inventory[currentIndex].collectableName + " " + currentIndex.ToString();
+            descriptionText.text = "Press [E] to " + info.inventory[currentIndex].description;
         }
 
-        if (Input.GetKeyDown(KeyCode.E))
+        if (info.inventory.Count > 0)
         {
-            if(inventory.Cunt > 0)
+            //Use currently selected Item
+            if (Input.GetKeyDown(KeyCode.E))
             {
-                inventory[currentIndex].Use();
-                inventory.RemoveAt(currentIndex);
-                currentIndex = (currentIndex - 1) % inventory.Cunt;
+                info.inventory[currentIndex].Use();
+                info.inventory.RemoveAt(currentIndex);
+
+                if (info.inventory.Count != 0)
+                {
+                    currentIndex = (currentIndex - 1) % info.inventory.Count;
+
+                }
+            }
+
+            // Switch to the next item
+            if (Input.GetKeyDown(KeyCode.I))
+            {
+                currentIndex = (currentIndex + 1) % info.inventory.Count;
             }
         }
 
@@ -69,7 +90,7 @@ public class playerManager : MonoBehaviour
         {
             PauseGame();
         }
-        if (health <= 0)
+        if (info.health <= 0)
         {
             LoseGame();
         }
@@ -134,12 +155,24 @@ public class playerManager : MonoBehaviour
 
     public void ChangeHealth(int value)
     {
-        health += value;
+        info.health += value;
     }
 
     public void ChangeScore(int value)
     {
-        score += value;
+        info.score += value;
     }
 
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        Colectable item = collision.GetComponent<Colectable>();
+
+        if (item != null)
+        {
+            item.player = this.gameObject;
+            item.transform.parent = null;
+            info.inventory.Add(item);
+            item.gameObject.SetActive(false);
+        }
+    }
 }
